@@ -16,6 +16,7 @@ $global:playerString = $NULL
 $global:playerUN = $NULL
 $global:spectate = 0
 $global:status = $NULL
+$global:timeStamp = $NULL
 
 $global:resultsFileCSV = "~\hsResults.csv"
 $global:resultsFileTXT = "~\hsResults.txt"
@@ -34,15 +35,14 @@ $global:resultsFileTXT = "~\hsResults.txt"
 
 function checkSpectating{
   echo "Checking for spectating match..."
-  $global:isSpectating = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 1000 | Where-Object {($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))}
-  if($global:isSpectating -ne $NULL){
+  if(($global:isSpectating = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 1000 | Where-Object {($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))}) -ne $NULL){
     $global:spectate = 1
   }
   $global:isSpectating
 }
 
 function checkEndSpectating{
-  if ((Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 500 | Where-Object {$_.Contains("================== End Spectator Mode ==================")}) -ne $NULL){
+  if ((Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 1000 | Where-Object {$_.Contains("================== End Spectator Mode ==================")}) -ne $NULL){
     $global:spectate = 0
     # checkSpectating
     Clear-Variable matchEndStatus,playerString,playerID,playerUN
@@ -57,9 +57,11 @@ function checkEndSpectating{
 
 function checkNewGame {
   $global:matchStartStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 2000 | Where-Object {($_.Contains("GameState.DebugPrintPower() - CREATE_GAME")) -or ($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))};Clear-Variable matchEndStatus
+  $timeStampLine = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 2000 | Where-Object {($_.Contains("GameState.DebugPrintPower() - CREATE_GAME")) -or ($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))}
+  $global:timeStamp = $timeStampLine.Split(" ")[1]
 }
 function checkEndGame {
-  $global:matchEndStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 10000 | Where-Object {($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=LOST")) -or ($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=WON"))}; Clear-Variable matchStartStatus; if($global:spectate -eq 1){checkEndSpectating}
+  $global:matchEndStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=LOST")) -or ($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=WON"))}; Clear-Variable matchStartStatus; if($global:spectate -eq 1){checkEndSpectating}
 }
 
 function status {
@@ -223,10 +225,12 @@ function gameStart {
 
 function matchResult {
   Write-Output "Waiting for match to finish..."
+  $global:matchEndStatus = $NULL
   do {
     appStatus
     checkEndGame
   } until ($global:matchEndStatus -ne $NULL)
+  $global:matchEndStatus
   calcMatchResults
   # . .\bgMatchResults.ps1
   # gameScript
@@ -265,10 +269,10 @@ function gameScript{
 }
 
 #### Begin game script ####
-
+Start-Transcript -Append ~\bgScriptLog.txt
 while($true){
   # cd ~
-  cd "C:\Users\GrahamWin10\Documents\Hearthstone Project"
+  # cd "C:\Users\GrahamWin10\Documents\Hearthstone Project"
   appStatus
   Write-Host "`r######## Hearthstone is open ########"
   Start-Sleep -m 500
