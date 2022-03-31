@@ -35,16 +35,21 @@ $global:resultsFileTXT = "~\hsResults.txt"
 
 function checkSpectating{
   echo "Checking for spectating match..."
-  if(($global:isSpectating = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 1000 | Where-Object {($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))}) -ne $NULL){
+  if(($global:isSpectating = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }) -ne $NULL){
     $global:spectate = 1
   }
   $global:isSpectating
 }
 
 function checkEndSpectating{
-  if ((Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 1000 | Where-Object {$_.Contains("================== End Spectator Mode ==================")}) -ne $NULL){
+  if ((Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {$_.Contains("================== End Spectator Mode ==================")} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }) -ne $NULL){
     $global:spectate = 0
     # checkSpectating
+    $timeStampLine = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {$_.Contains("================== End Spectator Mode ==================")} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }
+    if ($timeStampLine -ne $NULL){
+      $global:timeStamp = $timeStampLine.Split(" ")[1]
+      $global:timeStamp | Out-File .\timestamp.txt
+    }
     Clear-Variable matchEndStatus,playerString,playerID,playerUN
     # $global:matchEndStatus = $NULL
     # $global:playerString = $NULL
@@ -56,12 +61,16 @@ function checkEndSpectating{
 }
 
 function checkNewGame {
-  $global:matchStartStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 2000 | Where-Object {($_.Contains("GameState.DebugPrintPower() - CREATE_GAME")) -or ($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))};Clear-Variable matchEndStatus
+  $global:matchStartStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {($_.Contains("GameState.DebugPrintPower() - CREATE_GAME")) -or ($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp };Clear-Variable matchEndStatus
   $timeStampLine = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 2000 | Where-Object {($_.Contains("GameState.DebugPrintPower() - CREATE_GAME")) -or ($_.Contains("================== Start Spectator Game ==================")) -or ($_.Contains("================== Begin Spectating 1st player =================="))}
-  $global:timeStamp = $timeStampLine.Split(" ")[1]
+  if ($timeStampLine -ne $NULL){
+    $global:timeStamp = $timeStampLine.Split(" ")[1]
+    $global:timeStamp | Out-File .\timestamp.txt
+  }
+  
 }
 function checkEndGame {
-  $global:matchEndStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=LOST")) -or ($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=WON"))}; Clear-Variable matchStartStatus; if($global:spectate -eq 1){checkEndSpectating}
+  $global:matchEndStatus = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object {($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=LOST")) -or ($_.contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=WON"))} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }; Clear-Variable matchStartStatus; if($global:spectate -eq 1){checkEndSpectating}
 }
 
 function status {
@@ -94,12 +103,12 @@ function appStatus {
 function calcMatchResults {
   ### CHECK IF PLAYER WON OR LOST
   Write-Output "Match over. Gathering results..."
-  $matchResultString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 30000 | Where-Object { ($_.Contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=LOST")) -or ($_.Contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=WON"))}
+  $matchResultString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 30000 | Where-Object { ($_.Contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=LOST")) -or ($_.Contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=WON"))} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }
   $matchResult = ($matchResultString -replace ".*value=")
   # $playerResultString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 20000 | Where-Object { $_.Contains("PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=") } | Where-Object { $_.Contains("zone=GRAVEYARD") } | Where-Object { $_.Contains("tag=PLAYER_LEADERBOARD_PLACE") }
   Start-Sleep -s 1
   if ($matchResult -ne "WON"){
-    $playerResultString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 60000 | Where-Object { $_.Contains("$playerHeroName") } | Where-Object { $_.Contains("tag=PLAYER_LEADERBOARD_PLACE") }
+    $playerResultString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 60000 | Where-Object { $_.Contains("$playerHeroName") } | Where-Object { $_.Contains("tag=PLAYER_LEADERBOARD_PLACE") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }
     $playerResultString
     if($playerResultString.count -gt 1){
       $playerResult = ($playerResultString[$playerResultString.count-1] -replace ".*value=")
@@ -139,7 +148,7 @@ function getPlayerInfo {
   ### Get player info ###
   echo "Checking for player info..."
   do{
-    $global:playerString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 3000 | Where-Object { ($_.Contains("GameState.DebugPrintGame() - PlayerID=")) -and (!$_.Contains("PlayerName=The Innkeeper"))}; appStatus
+    $global:playerString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("GameState.DebugPrintGame() - PlayerID=")) -and (!$_.Contains("PlayerName=The Innkeeper"))} | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }; appStatus
     $global:playerString
   }until($global:playerString -ne $NULL)
 
@@ -157,7 +166,7 @@ function getPlayerInfo {
     do{
       appStatus
       checkEndGame
-      $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 2000 | Where-Object { $_.Contains("GameState.SendChoices() -   m_chosenEntities[0]=") } | Where-Object { $_.Contains("zone=HAND") }
+      $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { $_.Contains("GameState.SendChoices() -   m_chosenEntities[0]=") } | Where-Object { $_.Contains("zone=HAND") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }
     }until($global:playerHeroString -ne $NULL)
     $global:playerHeroString
   }else{
@@ -165,12 +174,12 @@ function getPlayerInfo {
       checkEndSpectating
       # checkEndSpectating
       # $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("GameState.DebugPrintOptions() -     target ")) } | Where-Object { $_.Contains("entity=[entityName=") } | Where-Object { $_.Contains("cardId=TB_BaconShop_HERO") } | Where-Object { !$_.Contains("_Buddy") } | Where-Object { $_.Contains("player=$global:playerID") }
-      $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { $_.Contains("GameState.DebugPrintEntitiesChosen() -   Entities[0]=[entityName=") } | Where-Object { $_.Contains("zone=HAND") }
+      $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { $_.Contains("GameState.DebugPrintEntitiesChosen() -   Entities[0]=[entityName=") } | Where-Object { $_.Contains("zone=HAND") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }
 
       # if($global:playerHeroString -eq "BaconPHhero" -and $NULL){
       if(@("BaconPHhero",$NULL) -contains $global:playerHeroString){
         # $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("PowerTaskList.DebugPrintPower() -     FULL_ENTITY - Updating [entityName=")) } | Where-Object { $_.Contains("zone=PLAY") } | Where-Object { $_.Contains("_HERO_") } | Where-Object { !$_.Contains("_Buddy") } | Where-Object { $_.Contains("player=$global:playerID") } | Where-Object { $_[-1] -ne 'p' }
-        $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("PowerTaskList.DebugPrintPower() -     FULL_ENTITY - Updating [entityName=")) } | Where-Object { $_.Contains("zone=PLAY") } | Where-Object { $_.Contains("_HERO_") } | Where-Object { !$_.Contains("_Buddy") } | Where-Object { $_.Contains("player=$global:playerID") } | Where-Object { $_[-1.-1] -ne 'p'} | Where-Object { $_[-1] -ne 'p'}
+        $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("PowerTaskList.DebugPrintPower() -     FULL_ENTITY - Updating [entityName=")) } | Where-Object { $_.Contains("zone=PLAY") } | Where-Object { $_.Contains("_HERO_") } | Where-Object { !$_.Contains("_Buddy") } | Where-Object { $_.Contains("player=$global:playerID") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp } | Where-Object { $_[-1.-1] -ne 'p'} | Where-Object { $_[-1] -ne 'p'}
       }
     # }until($global:playerHeroString -ne $NULL)
     }until(@("BaconPHhero",$NULL) -notcontains $global:playerHeroString)
@@ -270,6 +279,7 @@ function gameScript{
 
 #### Begin game script ####
 Start-Transcript -Append ~\bgScriptLog.txt
+$global:timeStamp = Get-Content ".\timestamp.txt"
 while($true){
   # cd ~
   # cd "C:\Users\GrahamWin10\Documents\Hearthstone Project"
