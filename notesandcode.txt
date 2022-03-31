@@ -1,0 +1,95 @@
+#### Outline ####
+
+1. Get user's hero id
+2. Get game over indication
+3. Get user's final info via id
+
+#################
+
+
+#### NOTES ####
+tag=NEXT_STEP value=FINAL_GAMEOVER
+
+Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" | Where-Object { $_.Contains("GameState.DebugPrintPower() -     TAG_CHANGE Entity=GameEntity tag=NEXT_STEP value=FINAL_GAMEOVER") }
+
+Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" | Where-Object { $_.Contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=[entityName=") }
+
+
+D 21:40:41.9344841 GameState.SendChoices() -   m_chosenEntities[0]=[entityName=Ambassador Faelin id=81 zone=HAND zonePos=3 cardId=BG22_HERO_201 player=1]
+
+
+
+### 2675 ###
+D 19:32:25.6858111 GameState.DebugPrintPower() -                           Source = [entityName=George the Fallen id=86 zone=PLAY zonePos=0 cardId=TB_BaconShop_HERO_15 player=4]
+
+
+
+
+
+GameState.DebugPrintPower() - TAG_CHANGE Entity=[entityName=Trade Prince Gallywix id=93 zone=PLAY zonePos=0 cardId=TB_BaconShop_HERO_10 player=1] tag=PLAYER_LEADERBOARD_PLACE value=4
+
+PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=Trade Prince Gallywix id=93 zone=GRAVEYARD zonePos=0 cardId=TB_BaconShop_HERO_10 player=1] tag=PLAYER_LEADERBOARD_PLACE value=4
+
+
+PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=
+
+
+
+##################
+
+### ALERT: ADD LINE "-tail 10000" to the end of all calls to the log file once finished
+
+#### Code ####
+
+
+function isMatchActive {
+  --
+}
+
+function getPlayerInfo {
+### Get player ID ###
+### Grab player ID string ###
+$playerString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" | Where-Object { $_.Contains("GameState.DebugPrintGame() - PlayerID=") }
+### Extract exact ID from string
+$playerID = ($playerString[0] -replace ".*PlayerID=").Substring(0,1)
+$playerUN = ($playerString[0] -replace ".*PlayerName=")
+
+
+### Get hero info ###
+$playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" | Where-Object { $_.Contains("GameState.SendChoices() -   m_chosenEntities[0]=") } | Where-Object { $_.Contains("zone=HAND") }
+
+$playerHeroID = ($playerHeroString[($playerHeroString.Length-1)] -replace ".* id=").Substring(0,2)
+$playerHeroName = ($playerHeroString[($playerHeroString.Length-1)] -replace ".*entityName=" -replace "id=.*")
+}
+
+function checkMatchOver {
+  --
+}
+
+
+
+function calcMatchResults {
+
+### CHECK IF PLAYER WON OR LOST
+
+$matchResultString = (Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" | Where-Object { $_.Contains("GameState.DebugPrintPower() - TAG_CHANGE Entity=$playerUN tag=PLAYSTATE value=") })[$_.length-1]
+
+$matchResult = ($matchResultString -replace ".*value=")
+
+
+
+### IF PLAYER WON
+Then their placement is 1st, and gather hero info
+
+
+### IF THE PLAYER LOST
+GameState.DebugPrintPower() - TAG_CHANGE Entity=InstaGraham#1597 tag=PLAYSTATE value=LOST
+
+$playerResultString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" | Where-Object { $_.Contains("PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=") } | Where-Object { $_.Contains("zone=GRAVEYARD") } | Where-Object { $_.Contains("tag=PLAYER_LEADERBOARD_PLACE") }
+$playerResult = ($playerResultString -replace ".*value=")
+
+
+### Gameover message
+PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=GameEntity tag=NEXT_STEP value=FINAL_GAMEOVER 
+}
+
