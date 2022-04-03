@@ -6,4 +6,4 @@ The purpose of this project is to track and record your HS battlegrounds matches
 
 # Known Bugs:
 
-- Aranna won't correctly record results because due to her name changing mid-match.
+- Aranna won't correctly record results due to her name change mid-match.
