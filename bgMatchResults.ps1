@@ -24,16 +24,6 @@ $global:resultsFileTXT = "~\hsResults.txt"
 
 
 #### Instantiate functions ####
-# function Clear-Variables{
-#   $ps = [PowerShell]::Create()
-# $ps.AddScript('Get-Variable | Select-Object -ExpandProperty Name') | Out-Null
-# $builtIn = $ps.Invoke()
-# $ps.Dispose()
-# $builtIn += "profile","psISE","psUnsupportedConsoleApplications" # keep some ISE-specific stuff
-
-# Remove-Variable (Get-Variable | Select-Object -ExpandProperty Name | Where-Object {$builtIn -NotContains $_})
-# }
-
 function checkMidnight {
   $midnightTime = (Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 1).split(" ")[1]
   if (($midnightTime -like "00:*") -and ($global:midnight -ne 1)){
@@ -135,7 +125,7 @@ function calcMatchResults {
   Start-Sleep -m 100
   echo "Place: $playerResult"
   echo "Date: $(Get-Date -Format u)"
-  echo "<<---------------------------------->>"
+  echo "\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/"
   $newLine2 = "$playerResult  - $playerHeroName"
   if ($global:spectate -eq 0){
     $newLine1 | Add-Content $global:resultsFileCSV
@@ -177,7 +167,7 @@ function getPlayerInfo {
       checkEndSpectating
       $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { $_.Contains("GameState.DebugPrintEntitiesChosen() -   Entities[0]=[entityName=") } | Where-Object { $_.Contains("zone=HAND") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp }
       if(@("BaconPHhero",$NULL) -contains $global:playerHeroString){
-        $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("PowerTaskList.DebugPrintPower() -     FULL_ENTITY - Updating [entityName=")) } | Where-Object { $_.Contains("zone=PLAY") } | Where-Object { $_.Contains("_HERO_") } | Where-Object { !$_.Contains("_Buddy") } | Where-Object { $_.Contains("player=$global:playerID") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp } | Where-Object { $_[-1.-1] -ne 'p'} | Where-Object { $_[-1] -ne 'p'}
+        $global:playerHeroString = Get-Content "C:\Program Files (x86)\Hearthstone\Logs\Power.log" -tail 5000 | Where-Object { ($_.Contains("PowerTaskList.DebugPrintPower() -     FULL_ENTITY - Updating [entityName=")) } | Where-Object { $_.Contains("zone=PLAY") } | Where-Object { $_.Contains("_HERO_") } | Where-Object { !$_.Contains("_Buddy") } | Where-Object { $_.Contains("player=$global:playerID") } | Where-Object { $_.split(" ")[1] -ge $global:timeStamp } | Where-Object { $_[-1.-1] -ne 'p'} | Where-Object { $_[-1] -ne 'p'} | Where-Object { $_ -notlike "*p_*"}
       }
     # }until($global:playerHeroString -ne $NULL)
     }until(@("BaconPHhero",$NULL) -notcontains $global:playerHeroString)
