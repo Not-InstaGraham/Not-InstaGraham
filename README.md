@@ -1,6 +1,6 @@
 ﻿# Battlegrounds Logging Project
 
-The purpose of this project is to track and record your HS battlegrounds matches in a clean and orderly fashion.
+The purpose of this project is to track and record your Hearthstone Battlegrounds matches and export that information in a manner that can be used for streaming or simple data collection/aggregation.
 
 ------
 # Installation/Execution:
