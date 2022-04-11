@@ -41,3 +41,4 @@ The script exports information into two primary files: a CSV file and a text fil
 
 ## Known Bugs: <a name="Known-Bugs"></a>
 - Aranna won't correctly record results due to her name change mid-match.
+- Matches may not record properly after re-launching the game while the script is running.
