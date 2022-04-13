@@ -15,9 +15,10 @@ The purpose of this project is to track and record your Hearthstone Battleground
 ------
 ## Installation/Execution: <a name="Installation-Execution"></a>
 - Clone or download the script.
-- Open an administrator Powershell window and cd to the directory that you placed the project.
-- Ensure your execution policy is set to bypass. (instructions can be found [here](https://riptutorial.com/powershell/example/20107/bypassing-execution-policy-for-a-single-script))
-- Run the script using: ```& .\bgMatchResults.ps1```
+- Open the run.bat file.
+- ~~Open an administrator Powershell window and cd to the directory that you placed the project.~~
+- ~~Ensure your execution policy is set to bypass. (instructions can be found [here]~(https://riptutorial.com/powershell/example/20107/bypassing-execution-policy-for-a-single-script))
+- ~~Run the script using: ```& .\bgMatchResults.ps1```~~
 
 ## Usage in OBS: <a name="Usage-in-OBS"></a>
 - 
